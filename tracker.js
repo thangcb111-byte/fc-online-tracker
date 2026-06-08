@@ -51,13 +51,13 @@ function refreshPatFromLearning(){
   [5,6,7,8].forEach(lvl=>{
     PAT[lvl]=JSON.parse(JSON.stringify(BASE_PAT[lvl]));
   });
-  [5,6,7].forEach(lvl=>{
+  [5,6,7,8].forEach(lvl=>{
     let recs=learnedByLevel(lvl);
     if(recs.length===0) return;
     let lens=recs.map(r=>r.drops.length);
     let avg=lens.reduce((a,b)=>a+b,0)/lens.length;
     PAT[lvl].avgLen=(BASE_PAT[lvl].avgLen*BASE_PAT[lvl].dataCount + avg*recs.length)/(BASE_PAT[lvl].dataCount+recs.length);
-    PAT[lvl].dataLabel=`${lvl===5?'Đập 6':lvl===6?'Đập 7':'Đập 8'} (${BASE_PAT[lvl].dataCount + recs.length} dây + học)`;
+    PAT[lvl].dataLabel=`${lvl===5?'Đập 6':lvl===6?'Đập 7':lvl===7?'Đập 8':'Đập 9'} (${BASE_PAT[lvl].dataCount + recs.length} dây + học)`;
     recs.forEach(r=>{
       let key=r.drops.slice(-2).join('')+String(r.target);
       PAT[lvl].endPats[key]=(PAT[lvl].endPats[key]||0)+1;
@@ -629,7 +629,7 @@ function renderLearnStats(){
   if(!$('learnStats')) return;
   let total=allLearningRecords().length;
   let user=learnedRecords.length;
-  let by=[5,6,7].map(l=>`+${l}→+${l+1}: ${learnedByLevel(l).length}`).join(' • ');
+  let by=[5,6,7,8].map(l=>`+${l}→+${l+1}: ${learnedByLevel(l).length}`).join(' • ');
   $('learnCount').textContent=`${user} dòng học mới`;
   $('learnStats').textContent=`Dataset đang học: ${total} dây (${by}). Data mới lưu trên trình duyệt + có thể xuất backup.`;
 }
@@ -643,7 +643,8 @@ function setupLearningUI(){
   $('btnLearnClearImg').addEventListener('click',()=>{$('learnImage').value=''; $('learnPreview').removeAttribute('src'); $('learnPreview').style.display='none';});
   $('btnLearnAdd').addEventListener('click',()=>{
     let lines=$('learnText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    let recs=window.FC_DATASET.recordsFromLines(lines,'user_daily');
+    let forced=$('learnTarget') && $('learnTarget').value!=='auto' ? $('learnTarget').value : null;
+    let recs=window.FC_DATASET.recordsFromLines(lines,'user_daily',forced);
     if(recs.length===0){$('learnResult').style.color='var(--red)';$('learnResult').textContent='Không parse được dòng nào. Dạng đúng: 2212 = 6';return;}
     learnedRecords=learnedRecords.concat(recs);
     window.FC_DATASET.saveLearned(learnedRecords);

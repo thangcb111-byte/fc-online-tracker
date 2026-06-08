@@ -10,20 +10,20 @@
     "312334112=7","332=7","223=77","2=7","4222=7","3233232322=7","4132222=7","43142341=7","243344211342333442=7","4421243122434322242434=7","3223322423=7","322224233=7","3=7","1=77","42=777","1=7",
     "337=7","327=7","237=7","227=7","347=7","247=7","437=7","4327=7","2247=7"
   ];
-  function parseLine(line, source){
+  function parseLine(line, source, forcedTarget){
     const clean = String(line||"").replace(/\([^)]*\)/g, " ").replace(/\s+/g, "").trim();
     if(!clean || !clean.includes("=")) return null;
     const parts = clean.split("=");
     const left = parts[0], right = parts[1] || "";
     if(!/^\d+$/.test(left) || !/^\d+$/.test(right)) return null;
-    const target = parseInt(right[0],10);
+    const target = forcedTarget ? parseInt(forcedTarget,10) : parseInt(right[0],10);
     if(![6,7,8,9].includes(target)) return null;
     const drops = left.split("").map(Number).filter(n=>n>=1 && n<=5);
     if(drops.length===0) return null;
     const mainAttempts = right.length;
-    return {target, level:target-1, drops, mainFails:Math.max(0, mainAttempts-1), source:source||"seed", createdAt:new Date().toISOString(), raw:line};
+    return {target, level:target-1, drops, mainFails:Math.max(0, mainAttempts-1), source:source||"seed", createdAt:new Date().toISOString(), raw:line, forced:!!forcedTarget};
   }
-  function recordsFromLines(lines, source){ return lines.map(l=>parseLine(l,source)).filter(Boolean); }
+  function recordsFromLines(lines, source, forcedTarget){ return lines.map(l=>parseLine(l,source,forcedTarget)).filter(Boolean); }
   const seedRecords = recordsFromLines(YT6,"youtube_seed").concat(recordsFromLines(YT7,"youtube_seed"));
   const STORAGE_KEY="fc_tracker_learned_records_v1";
   function loadLearned(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return [];} }
