@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FC Online — Tracker Mồi v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c18;--bg2:#0f1525;--bg3:#1a2035;--border:#2a3553;--cyan:#00f0ff;--purple:#7c3aed;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--pink:#ec4899;--yellow:#fbbf24;--text:#e8ecf4;--dim:#5a6478;--sub:#8b95b0;--mono:'JetBrains Mono',monospace}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .sub{font-size:.65rem;color:var(--sub)}
+.si{display:flex;gap:14px;font-family:var(--mono);font-size:.75rem}
+.si-item{text-align:center}
+.si-val{display:block;font-size:.95rem;font-weight:700;color:var(--cyan)}
+.si-label{color:var(--dim);font-size:.58rem;text-transform:uppercase}
+
+.layout{display:grid;grid-template-columns:300px 1fr;gap:8px;padding:8px;height:calc(100vh - 55px)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.ptitle{padding:8px 12px;border-bottom:1px solid var(--border);font-size:.78rem;font-weight:700;background:rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center}
+
+/* Level tabs */
+.lvl-tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.lvl-tab{flex:1;padding:7px 3px;border:2px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--sub);font-weight:700;font-size:.75rem;cursor:pointer;transition:all .2s;text-align:center;font-family:var(--mono)}
+.lvl-tab[data-lvl="5"].active{border-color:#10b981;background:rgba(16,185,129,.15);color:#10b981}
+.lvl-tab[data-lvl="6"].active{border-color:#f59e0b;background:rgba(245,158,11,.15);color:#f59e0b}
+.lvl-tab[data-lvl="7"].active{border-color:#ef4444;background:rgba(239,68,68,.15);color:#ef4444}
+.lvl-tab[data-lvl="8"].active{border-color:#ec4899;background:rgba(236,72,153,.15);color:#ec4899}
+
+/* Drop level input */
+.input-area{padding:10px;flex:1}
+.input-label{font-size:.68rem;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.input-label span{color:var(--cyan);font-weight:700}
+
+/* Fail buttons — drop level */
+.fail-section{margin-bottom:8px}
+.fail-title{font-size:.62rem;color:var(--red);margin-bottom:5px;font-weight:600}
+.drop-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px}
+.drop-btn{padding:10px 4px;border:2px solid var(--border);border-radius:7px;background:var(--bg3);color:var(--sub);font-family:var(--mono);font-size:.85rem;font-weight:700;cursor:pointer;transition:all .18s;text-align:center}
+.drop-btn:hover{transform:translateY(-2px)}
+.drop-btn[data-drop="1"]:hover,.drop-btn[data-drop="1"].last{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,.15)}
+.drop-btn[data-drop="2"]:hover,.drop-btn[data-drop="2"].last{border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.15)}
+.drop-btn[data-drop="3"]:hover,.drop-btn[data-drop="3"].last{border-color:#a78bfa;color:#a78bfa;background:rgba(167,139,250,.15)}
+.drop-btn[data-drop="4"]:hover,.drop-btn[data-drop="4"].last{border-color:#06b6d4;color:#06b6d4;background:rgba(6,182,212,.15)}
+.drop-btn[data-drop="5"]:hover,.drop-btn[data-drop="5"].last{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.15)}
+.drop-btn:active{transform:scale(.93)}
+.drop-sub{font-size:.56rem;display:block;margin-top:1px;opacity:.7}
+
+/* Win button */
+.win-btn{width:100%;padding:14px;border:2px solid var(--green);border-radius:9px;background:rgba(16,185,129,.1);color:var(--green);font-size:1.2rem;font-weight:900;cursor:pointer;transition:all .2s;text-align:center;margin-bottom:8px}
+.win-btn:hover{background:rgba(16,185,129,.25);transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,185,129,.3)}
+.win-btn:active{transform:scale(.95)}
+.win-sub{display:block;font-size:.65rem;font-weight:500;margin-top:2px;opacity:.8}
+
+/* Action row */
+.action-row{display:flex;gap:5px;margin-bottom:8px}
+.abtn{flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--sub);font-size:.68rem;cursor:pointer;transition:all .15s;font-weight:600}
+.abtn:hover{border-color:var(--orange);color:var(--orange)}
+.abtn.active{border-color:var(--cyan);background:rgba(0,240,255,.08);color:var(--cyan)}
+
+/* Current sequence display */
+.seq-display{background:var(--bg3);border-radius:7px;padding:8px 10px;margin-bottom:8px;font-family:var(--mono);min-height:36px;border:1px solid var(--border)}
+.seq-display .seq-title{font-size:.6rem;color:var(--dim);margin-bottom:3px}
+.seq-chars{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.seq-char{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.seq-char.drop-1{background:rgba(239,68,68,.25);color:#ef4444;border:1px solid rgba(239,68,68,.4)}
+.seq-char.drop-2{background:rgba(245,158,11,.25);color:#f59e0b;border:1px solid rgba(245,158,11,.4)}
+.seq-char.drop-3{background:rgba(167,139,250,.25);color:#a78bfa;border:1px solid rgba(167,139,250,.4)}
+.seq-char.drop-4{background:rgba(6,182,212,.25);color:#06b6d4;border:1px solid rgba(6,182,212,.4)}
+.seq-char.drop-5{background:rgba(16,185,129,.2);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.seq-char.win{background:rgba(16,185,129,.3);color:#10b981;border:1px solid #10b981;font-size:.9rem}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px 10px;border-top:1px solid var(--border)}
+.sbox{background:var(--bg3);border-radius:6px;padding:7px;text-align:center}
+.sbox-val{font-family:var(--mono);font-size:.95rem;font-weight:700}
+.sbox-label{font-size:.58rem;color:var(--dim);margin-top:1px;text-transform:uppercase}
+
+/* Rec box */
+.rec-box{margin:6px 10px 8px;padding:12px;border-radius:9px;text-align:center;transition:all .4s}
+.rec-box.neutral{border:1px solid var(--border);background:rgba(42,53,83,.2)}
+.rec-box.wait{border:1px solid var(--orange);background:rgba(245,158,11,.07)}
+.rec-box.good{border:2px solid var(--green);background:rgba(16,185,129,.1);animation:gg 2s infinite}
+.rec-box.great{border:2px solid var(--yellow);background:rgba(251,191,36,.1);animation:gy 1s infinite}
+@keyframes gg{0%,100%{box-shadow:0 0 8px rgba(16,185,129,.2)}50%{box-shadow:0 0 25px rgba(16,185,129,.5)}}
+@keyframes gy{0%,100%{box-shadow:0 0 12px rgba(251,191,36,.3)}50%{box-shadow:0 0 35px rgba(251,191,36,.7)}}
+.rec-icon{font-size:1.5rem}
+.rec-title{font-size:.85rem;font-weight:800;margin-top:4px}
+.rec-detail{font-size:.68rem;color:var(--sub);margin-top:3px;line-height:1.4}
+.rec-conf{font-family:var(--mono);font-size:1.1rem;font-weight:900;margin-top:5px;display:none}
+.kbd-hint{padding:5px 10px;border-top:1px solid var(--border);font-size:.6rem;color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+.kbd{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-family:var(--mono);font-size:.6rem}
+
+/* Right panel */
+.right-panel{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.meter-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.meter-title{font-size:.72rem;font-weight:700;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.readiness-meter{height:20px;background:rgba(42,53,83,.4);border-radius:10px;overflow:hidden}
+.readiness-fill{height:100%;border-radius:10px;transition:width .6s,background .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:var(--mono);font-size:.7rem;font-weight:700;color:#fff;min-width:34px}
+.meter-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:.6rem;color:var(--dim)}
+.streak-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.sdot{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;font-family:var(--mono)}
+.sdot.win{background:var(--green);color:#fff;border-radius:50%}
+.sdot.drop-1{background:rgba(239,68,68,.3);color:#ef4444;border:1px solid rgba(239,68,68,.5)}
+.sdot.drop-2{background:rgba(245,158,11,.3);color:#f59e0b;border:1px solid rgba(245,158,11,.5)}
+.sdot.drop-3{background:rgba(167,139,250,.3);color:#a78bfa;border:1px solid rgba(167,139,250,.5)}
+.sdot.drop-4{background:rgba(6,182,212,.3);color:#06b6d4;border:1px solid rgba(6,182,212,.5)}
+.sdot.drop-5{background:rgba(16,185,129,.2);color:#10b981;border:1px solid rgba(16,185,129,.4)}
+.sdot.ph{background:var(--bg3);border:1px dashed var(--border)}
+
+/* Middle section: pattern + multi */
+.mid-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0}
+.pattern-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;overflow-y:auto}
+.ititle{font-size:.68rem;font-weight:700;color:var(--cyan);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.iitem{font-size:.68rem;color:var(--sub);margin-bottom:2px;line-height:1.4;padding-left:2px}
+.pat-row{display:flex;justify-content:space-between;padding:3px 6px;border-radius:4px;margin-bottom:2px;background:rgba(0,0,0,.2)}
+.pat-seq{font-family:var(--mono);font-size:.75rem}
+.pat-cnt{font-family:var(--mono);font-size:.65rem;color:var(--dim)}
+
+/* Multi grid */
+.multi-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);flex:1}
+.mcell{padding:8px;border-right:1px solid var(--border)}
+.mcell:last-child{border-right:none}
+.mc-lvl{font-family:var(--mono);font-weight:900;font-size:.95rem;margin-bottom:3px}
+.mc-bar{height:3px;background:rgba(42,53,83,.4);border-radius:2px;margin:3px 0}
+.mc-fill{height:100%;border-radius:2px;transition:width .5s}
+.mc-st{font-size:.6rem;font-weight:700;padding:2px 4px;border-radius:3px;display:inline-block;margin-top:3px}
+.mc-st.hot{background:rgba(251,191,36,.2);color:var(--yellow)}
+.mc-st.good{background:rgba(16,185,129,.2);color:var(--green)}
+.mc-st.wait{background:rgba(245,158,11,.15);color:var(--orange)}
+.mc-st.cold{background:rgba(239,68,68,.1);color:var(--red)}
+.mc-st.unk{background:rgba(42,53,83,.4);color:var(--dim)}
+
+/* Log */
+.log-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.log-body{padding:5px;overflow-y:auto;max-height:130px;font-family:var(--mono);font-size:.65rem}
+.log-entry{display:flex;gap:5px;padding:2px 4px;border-radius:3px;margin-bottom:1px;align-items:center}
+.log-entry:nth-child(even){background:rgba(255,255,255,.02)}
+.le-t{color:var(--dim);min-width:24px}
+.le-l{min-width:20px;font-weight:700}
+.le-seq{flex:1;color:var(--sub)}
+.le-rec{margin-left:auto;font-size:.6rem}
+.log-entry.win .le-seq{color:var(--green)}
+.log-entry.rec-now .le-rec{color:var(--yellow);font-weight:700}
+.day-sep{text-align:center;padding:3px;color:var(--cyan);font-size:.65rem;border-top:1px dashed var(--border);margin:2px 0}
+
+/* Learning intake */
+.learn-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.learn-body{padding:8px;display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:stretch}
+.image-drop{border:1px dashed var(--border);border-radius:8px;background:rgba(42,53,83,.18);padding:8px;display:flex;flex-direction:column;gap:6px;justify-content:center;min-height:120px}
+.image-drop input{font-size:.62rem;color:var(--sub);max-width:100%}
+.img-preview{max-height:88px;max-width:100%;object-fit:contain;border-radius:6px;border:1px solid var(--border);display:none;background:#fff}
+.learn-text{width:100%;min-height:118px;resize:vertical;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text);font-family:var(--mono);font-size:.68rem;padding:8px;outline:none}
+.learn-text:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,240,255,.08)}
+.learn-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.learn-btn{padding:6px 9px;border:1px solid var(--border);border-radius:7px;background:var(--bg3);color:var(--sub);font-size:.65rem;font-weight:700;cursor:pointer}
+.learn-btn.primary{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,.08)}
+.learn-btn:hover{transform:translateY(-1px);border-color:var(--orange);color:var(--orange)}
+.learn-stats{font-size:.64rem;color:var(--sub);margin-top:5px;line-height:1.35}
+.learn-result{font-size:.65rem;margin-top:5px;color:var(--green);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🎯 FC Online — Tracker Mồi v3</h1>
+    <div class="sub">Ghi mức rớt về → Phân tích bậc thang → Chỉ ra turn vàng | 431 dây đập thực tế</div>
+  </div>
+  <div class="si">
+    <div class="si-item"><span class="si-val" id="totalTurns">0</span><span class="si-label">Tổng turn</span></div>
+    <div class="si-item"><span class="si-val" id="totalWins">0</span><span class="si-label">Thắng</span></div>
+    <div class="si-item"><span class="si-val" id="sessionTime">00:00</span><span class="si-label">Thời gian</span></div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="panel">
+    <div class="ptitle">
+      <span>⌨️ Nhập kết quả mồi</span>
+      <button class="abtn" id="btnReset" style="flex:none;padding:3px 8px">🔄 Reset</button>
+    </div>
+    <div class="lvl-tabs">
+      <button class="lvl-tab" data-lvl="5">+5<br><span style="font-size:.55rem;font-weight:400">→+6</span></button>
+      <button class="lvl-tab active" data-lvl="6">+6<br><span style="font-size:.55rem;font-weight:400">→+7</span></button>
+      <button class="lvl-tab" data-lvl="7">+7<br><span style="font-size:.55rem;font-weight:400">→+8</span></button>
+      <button class="lvl-tab" data-lvl="8">+8<br><span style="font-size:.55rem;font-weight:400">→+9</span></button>
+    </div>
+
+    <div class="input-area">
+      <!-- Current seq display -->
+      <div class="seq-display">
+        <div class="seq-title">Chuỗi hiện tại:</div>
+        <div class="seq-chars" id="seqChars"><span style="color:var(--dim);font-size:.7rem">Chưa có lần nào...</span></div>
+      </div>
+
+      <!-- Win button -->
+      <button class="win-btn" id="btnWin">
+        ✅ LÊN CẤP THÀNH CÔNG!
+        <span class="win-sub" id="winLabel">Nhấn khi mồi lên được +<span id="targetLvlLabel">7</span></span>
+      </button>
+
+      <!-- Fail / drop level buttons -->
+      <div class="fail-section">
+        <div class="fail-title">❌ THẤT BẠI — Rớt về mấy?</div>
+        <div class="drop-btns" id="dropBtns">
+          <!-- generated by JS based on curLvl -->
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="abtn" id="btnUndo">↩ Undo</button>
+        <button class="abtn" id="btnNewDay">🌅 Ngày mới</button>
+        <button class="abtn" id="btnClearLog" style="flex:none;padding:6px 10px">🗑️</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="sbox"><div class="sbox-val" id="statAttempts" style="color:var(--cyan)">0</div><div class="sbox-label">Lần mồi</div></div>
+      <div class="sbox"><div class="sbox-val" id="statConsec" style="color:var(--red)">0</div><div class="sbox-label">Thua liên tiếp</div></div>
+      <div class="sbox"><div class="sbox-val" id="statHot" style="color:var(--orange)">—</div><div class="sbox-label">Ngưỡng nóng</div></div>
+      <div class="sbox"><div class="sbox-val" id="statAvgDrop" style="color:var(--purple)">—</div><div class="sbox-label">Rớt TB gần đây</div></div>
+    </div>
+
+    <div class="rec-box neutral" id="recBox">
+      <div class="rec-icon" id="recIcon">🎲</div>
+      <div class="rec-title" id="recTitle">Chờ dữ liệu...</div>
+      <div class="rec-detail" id="recDetail">Nhấn ✅ khi thắng hoặc chọn mức rớt khi thua</div>
+      <div class="rec-conf" id="recConf"></div>
+    </div>
+
+    <div class="kbd-hint">
+      <span><kbd class="kbd">W</kbd> Thắng</span>
+      <span><kbd class="kbd">1-5</kbd> Rớt về</span>
+      <span><kbd class="kbd">Z</kbd> Undo</span>
+      <span><kbd class="kbd">N</kbd> Ngày mới</span>
+      <span><kbd class="kbd">5-8</kbd> Chuyển tab</span>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <!-- Readiness meter -->
+    <div class="meter-panel">
+      <div class="meter-title">⚡ Đồng hồ sẵn sàng — Cấp +<span id="meterLvl">6</span>→+<span id="meterLvl2">7</span> (431 dây thực tế)</div>
+      <div class="readiness-meter"><div class="readiness-fill" id="readFill" style="width:0%;background:var(--green)">0%</div></div>
+      <div class="meter-labels"><span>🧊 Lạnh (đợi)</span><span>🔥 Nóng (đập!)</span></div>
+      <div class="streak-row" id="streakRow"></div>
+    </div>
+
+    <div class="learn-box">
+      <div class="ptitle" style="font-size:.7rem"><span>📥 Nạp dữ liệu học mỗi ngày</span><span id="learnCount" style="color:var(--cyan)">0 dòng học</span></div>
+      <div class="learn-body">
+        <div class="image-drop">
+          <input type="file" id="learnImage" accept="image/*">
+          <img id="learnPreview" class="img-preview" alt="Ảnh dữ liệu học">
+          <div style="font-size:.6rem;color:var(--dim);line-height:1.35">Upload ảnh notepad/screenshot, rồi paste dòng data bên phải. OCR tự động sẽ thêm ở phase sau.</div>
+        </div>
+        <div>
+          <textarea id="learnText" class="learn-text" placeholder="Dán data mỗi dòng một dây, ví dụ:\n2212 = 6\n233 = 6 6 6\n312334112 = 7"></textarea>
+          <div class="learn-actions">
+            <button class="learn-btn primary" id="btnLearnAdd">🧠 Phân tích & thêm vào data học</button>
+            <button class="learn-btn" id="btnLearnExport">⬇ Xuất backup</button>
+            <button class="learn-btn" id="btnLearnImport">⬆ Nhập backup</button>
+            <button class="learn-btn" id="btnLearnClearImg">🧹 Xóa ảnh</button>
+            <input type="file" id="learnImportFile" accept="application/json" style="display:none">
+          </div>
+          <div class="learn-stats" id="learnStats">Seed YouTube + data bạn sẽ được gộp với data học mới để tăng độ chính xác theo thời gian.</div>
+          <div class="learn-result" id="learnResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mid-row">
+      <!-- Pattern analysis -->
+      <div class="pattern-box" id="patternBox">
+        <div style="color:var(--dim);font-size:.72rem">Nhập dữ liệu để xem phân tích...</div>
+      </div>
+
+      <!-- Multi-level + Log -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="multi-box">
+          <div class="ptitle" style="font-size:.7rem">📊 Tổng quan 4 cấp</div>
+          <div class="mgrid" id="mgrid"></div>
+        </div>
+        <div class="log-box" style="flex:1">
+          <div class="ptitle" style="font-size:.7rem"><span>📋 Lịch sử</span></div>
+          <div class="log-body" id="logBody"><div style="color:var(--dim);padding:6px;text-align:center">Chưa có dữ liệu</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="dataset.js?v=1"></script>
+<script src="tracker.js?v=4"></script>
+</body>
+</html>
