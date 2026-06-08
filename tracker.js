@@ -275,6 +275,39 @@ function knnProb(lvl){
   return {prob:cl(prob,0,1), sample:top.length, detail:`${near}/${top.length} mẫu gần`};
 }
 
+function mineRules(lvl){
+  let recs=learnedByLevel(lvl), cur=getCurrentSeqDrops(lvl), p=PAT[lvl];
+  if(recs.length<8) return [{type:'info', text:'Chưa đủ data học để tự rút quy luật sâu.'}];
+  let rules=[];
+  let len=cur.length;
+  let atOrBefore=recs.filter(r=>r.drops.length<=len).length;
+  let after=recs.filter(r=>r.drops.length>len).length;
+  let pressure=(atOrBefore+1)/(recs.length+2);
+  rules.push({type:pressure>0.7?'hot':pressure>0.45?'warm':'cold', text:`Áp lực độ dài: ${pct(pressure)} dây lịch sử đã nổ ở ≤ ${len} mồi`});
+
+  if(cur.length>=2){
+    let tail2=cur.slice(-2).join('');
+    let tailHits=recs.filter(r=>r.drops.slice(-2).join('')===tail2);
+    if(tailHits.length>0){
+      let avgTail=tailHits.reduce((a,r)=>a+r.drops.length,0)/tailHits.length;
+      rules.push({type:tailHits.length>=5?'hot':'warm', text:`Đuôi ${tail2}: gặp ${tailHits.length} lần, TB nổ ${avgTail.toFixed(1)} mồi`});
+    }
+  }
+
+  if(cur.length>=3){
+    let last3=cur.slice(-3);
+    let trend=(last3[2]-last3[0]);
+    if(trend<0) rules.push({type:'hot', text:`Drop đang lùi (${last3.join('→')}): dấu hiệu gom lực tốt hơn`});
+    else if(trend>0) rules.push({type:'cold', text:`Drop đang tăng (${last3.join('→')}): rủi ro nhiễu, chưa nên all-in`});
+    else rules.push({type:'warm', text:`Drop đi ngang (${last3.join('→')}): cần thêm tín hiệu phụ`});
+  }
+
+  if(len>=p.veryHotT) rules.push({type:'hot', text:`Vượt ngưỡng cực nóng của cấp này (${len}/${p.veryHotT})`});
+  else if(len>=p.hotT) rules.push({type:'warm', text:`Đã chạm vùng nóng (${len}/${p.hotT}) nhưng vẫn cần xác nhận pattern`});
+
+  return rules.slice(0,5);
+}
+
 function getRec(lvl){
   let d=data[lvl], p=PAT[lvl], off=OFFICIAL[lvl];
   let n=d.seq.length, score=calcScore(lvl);
@@ -393,6 +426,12 @@ function renderPatternBox(){
   let mk=markovProb(curLvl), kn=knnProb(curLvl);
   html+=`<div class="ititle" style="margin-top:6px">🤖 ML live confidence</div>`;
   html+=`<div class="iitem">Markov: ${pct(mk.prob)} (${mk.detail}) • KNN: ${pct(kn.prob)} (${kn.detail})</div>`;
+  html+=`<div class="ititle" style="margin-top:6px">🧩 Quy luật tự rút</div>`;
+  mineRules(curLvl).forEach(r=>{
+    let col=r.type==='hot'?'var(--green)':r.type==='warm'?'var(--orange)':r.type==='cold'?'var(--red)':'var(--sub)';
+    let dot=r.type==='hot'?'🟢':r.type==='warm'?'🟡':r.type==='cold'?'🔴':'⚪';
+    html+=`<div class="iitem" style="color:${col}">${dot} ${r.text}</div>`;
+  });
   html+=`<div class="ititle" style="margin-top:6px">📊 ${p.dataLabel} — +${curLvl}→+${curLvl+1}</div>`;
   html+=`<div class="iitem">TB ${p.avgLen.toFixed(1)} mồi/dây • Tỷ lệ: ${pct(off)} • Nóng: ≥${p.hotT+d.missedCalls}</div>`;
 
