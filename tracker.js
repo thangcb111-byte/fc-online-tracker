@@ -645,11 +645,29 @@ function setupLearningUI(){
     let lines=$('learnText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
     let forced=$('learnTarget') && $('learnTarget').value!=='auto' ? $('learnTarget').value : null;
     let recs=window.FC_DATASET.recordsFromLines(lines,'user_daily',forced);
-    if(recs.length===0){$('learnResult').style.color='var(--red)';$('learnResult').textContent='Không parse được dòng nào. Dạng đúng: 2212 = 6';return;}
+    if(recs.length===0){
+      $('learnResult').style.color='var(--red)';
+      $('learnResult').textContent='❌ Không parse được dây nào. Dạng đúng: 2212 = 6 hoặc chọn cấp cụ thể.';
+      return;
+    }
     learnedRecords=learnedRecords.concat(recs);
     window.FC_DATASET.saveLearned(learnedRecords);
     refreshPatFromLearning();
-    $('learnText').value=''; $('learnResult').style.color='var(--green)'; $('learnResult').textContent=`Đã thêm ${recs.length} dây học mới ✅`;
+    
+    let counts={};
+    recs.forEach(r=>{ counts[r.target]=(counts[r.target]||0)+1; });
+    let detail=Object.keys(counts).map(t=>`Đập +${t} (${counts[t]} dây)`).join(', ');
+    
+    $('learnText').value=''; 
+    $('learnResult').style.color='var(--green)'; 
+    $('learnResult').innerHTML=`<span style="font-size:0.7rem; font-weight:bold; text-shadow:0 0 4px rgba(0,255,100,0.2)">🎉 Đã thêm thành công: ${detail}!</span>`;
+    
+    let box=document.querySelector('.learn-box');
+    if(box){
+      box.style.borderColor='var(--green)';
+      setTimeout(()=>{ box.style.borderColor=''; },1500);
+    }
+    
     renderLearnStats(); renderAll();
   });
   $('btnLearnExport').addEventListener('click',()=>{
@@ -659,7 +677,28 @@ function setupLearningUI(){
   $('btnLearnImport').addEventListener('click',()=>$('learnImportFile').click());
   $('learnImportFile').addEventListener('change',e=>{
     let f=e.target.files && e.target.files[0]; if(!f) return;
-    let r=new FileReader(); r.onload=()=>{try{let arr=JSON.parse(r.result); if(!Array.isArray(arr)) throw new Error('not array'); learnedRecords=learnedRecords.concat(arr); window.FC_DATASET.saveLearned(learnedRecords); refreshPatFromLearning(); renderLearnStats(); renderAll(); $('learnResult').style.color='var(--green)'; $('learnResult').textContent=`Đã nhập ${arr.length} dòng backup ✅`;}catch(err){$('learnResult').style.color='var(--red)';$('learnResult').textContent='File backup không hợp lệ';}}; r.readAsText(f);
+    let r=new FileReader(); r.onload=()=>{
+      try{
+        let arr=JSON.parse(r.result); 
+        if(!Array.isArray(arr)) throw new Error('not array'); 
+        learnedRecords=learnedRecords.concat(arr); 
+        window.FC_DATASET.saveLearned(learnedRecords); 
+        refreshPatFromLearning(); 
+        renderLearnStats(); 
+        renderAll(); 
+        $('learnResult').style.color='var(--green)'; 
+        $('learnResult').innerHTML=`<span style="font-size:0.7rem; font-weight:bold">🎉 Đã nhập ${arr.length} dòng backup thành công!</span>`;
+        let box=document.querySelector('.learn-box');
+        if(box){
+          box.style.borderColor='var(--green)';
+          setTimeout(()=>{ box.style.borderColor=''; },1500);
+        }
+      }catch(err){
+        $('learnResult').style.color='var(--red)';
+        $('learnResult').textContent='File backup không hợp lệ';
+      }
+    }; 
+    r.readAsText(f);
   });
 }
 setupLearningUI();
