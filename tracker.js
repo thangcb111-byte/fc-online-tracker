@@ -639,8 +639,43 @@ function setupLearningUI(){
   $('learnImage').addEventListener('change',e=>{
     let f=e.target.files && e.target.files[0]; if(!f) return;
     let url=URL.createObjectURL(f); $('learnPreview').src=url; $('learnPreview').style.display='block';
+    
+    if(typeof Tesseract === 'undefined'){
+      $('learnResult').style.color='var(--red)';
+      $('learnResult').textContent='❌ Không tải được thư viện OCR (vui lòng kiểm tra kết nối mạng).';
+      return;
+    }
+    
+    $('learnResult').style.color='var(--cyan)';
+    $('learnResult').textContent='🔍 Đang quét chữ từ ảnh tự động...';
+    
+    Tesseract.recognize(
+      f,
+      'eng',
+      { logger: m => console.log(m) }
+    ).then(({ data: { text } }) => {
+      let lines = text.split('\n');
+      let cleanedLines = lines.map(line => {
+        let normalized = line.replace(/[:\-—–]/g, '=');
+        return normalized.trim();
+      }).filter(Boolean);
+      
+      $('learnText').value = cleanedLines.join('\n');
+      $('learnResult').style.color='var(--green)';
+      $('learnResult').textContent='✅ Quét ảnh xong! Hãy bấm nút Phân tích để nạp.';
+    }).catch(err => {
+      console.error(err);
+      $('learnResult').style.color='var(--red)';
+      $('learnResult').textContent='❌ Quét ảnh lỗi. Hãy tự nhập chữ vào ô.';
+    });
   });
-  $('btnLearnClearImg').addEventListener('click',()=>{$('learnImage').value=''; $('learnPreview').removeAttribute('src'); $('learnPreview').style.display='none';});
+  $('btnLearnClearImg').addEventListener('click',()=>{
+    $('learnImage').value=''; 
+    $('learnPreview').removeAttribute('src'); 
+    $('learnPreview').style.display='none';
+    $('learnText').value='';
+    $('learnResult').textContent='';
+  });
   $('btnLearnAdd').addEventListener('click',()=>{
     let lines=$('learnText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
     let forced=$('learnTarget') && $('learnTarget').value!=='auto' ? $('learnTarget').value : null;
